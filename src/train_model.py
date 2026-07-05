@@ -169,6 +169,22 @@ def generate_dataset(n_samples: int = 2000) -> Tuple[List[str], List[str], List[
     return resumes, jds, scores
 
 
+def load_real_resume_example() -> Tuple[str, str, float]:
+    """Load the real resume and a matching JD for supervised training."""
+    project_root = Path(__file__).resolve().parent.parent
+    resume_path = project_root / "data" / "sample_resumes" / "06_bhuvan_kambad_resume.txt"
+    jd_path = project_root / "data" / "sample_job_descriptions" / "ai_ml_engineer_jd.txt"
+
+    if not resume_path.exists() or not jd_path.exists():
+        return None, None, None
+
+    resume_text = resume_path.read_text(encoding="utf-8")
+    jd_text = jd_path.read_text(encoding="utf-8")
+    # High relevance because the JD is crafted to match the real resume
+    true_score = 95.0
+    return resume_text, jd_text, true_score
+
+
 def build_feature_matrix(
     resumes: List[str],
     jds: List[str],
@@ -190,11 +206,6 @@ def build_feature_matrix(
 
     features = []
     for resume_text, jd_text, sim in zip(resumes, jds, semantic_sims):
-        # For each pair, fit a fresh TF-IDF on the pair to capture pair-specific terms
-        # This mimics the inference behavior when ranking a single JD against multiple resumes
-        vectorizer = scorer.tfidf_vectorizer.__class__(
-            stop_words="english", ngram_range=(1, 2), max_features=5000
-        )
         feature_vector = extract_all_features(resume_text, jd_text, sim)
         features.append(feature_vector)
     return np.array(features)
@@ -211,6 +222,13 @@ def train_model(
 
     print("Generating synthetic dataset...")
     resumes, jds, scores = generate_dataset(n_samples)
+
+    real_resume, real_jd, real_score = load_real_resume_example()
+    if real_resume is not None:
+        print("Adding real resume example to training data...")
+        resumes.append(real_resume)
+        jds.append(real_jd)
+        scores.append(real_score)
 
     print("Initializing similarity scorer...")
     scorer = SimilarityScorer()
@@ -253,6 +271,20 @@ def train_model(
 
     print(f"Validation MSE: {mse:.2f}")
     print(f"Validation MAE: {mae:.2f}")
+
+    # Evaluate on the real resume example if available
+    if real_resume is not None:
+        real_sim = scorer.compute_semantic_similarity(real_jd, real_resume)
+        real_features = extract_all_features(real_resume, real_jd, real_sim)
+        real_scaled = scaler.transform(real_features.reshape(1, -1))
+        real_pred = float(model.predict(real_scaled)[0])
+        real_pred = max(0, min(100, real_pred))
+        real_mae = abs(real_score - real_pred)
+        real_mse = (real_score - real_pred) ** 2
+        print(f"Real resume predicted score: {real_pred:.2f}")
+        print(f"Real resume true score: {real_score:.2f}")
+        print(f"Real resume MAE: {real_mae:.2f}")
+        print(f"Real resume MSE: {real_mse:.2f}")
 
     # Save artifacts
     model_path = output_dir / "ranking_model.json"

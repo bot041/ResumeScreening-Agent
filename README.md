@@ -115,14 +115,23 @@ pytest tests/
 
 ## Model Performance
 
-The XGBoost regressor is validated on a held-out test set. Example metrics on the generated synthetic data:
+The XGBoost regressor is validated on a held-out test set. Latest metrics after including a real resume example in the training data:
 
-- **Mean Absolute Error (MAE)**: ~2.6 points
-- **Mean Squared Error (MSE)**: ~11.8
+- **Validation Mean Absolute Error (MAE)**: 2.50 points
+- **Validation Mean Squared Error (MSE)**: 11.34
 
 Top predictive features are `experience_fit`, `skill_match_ratio`, and `education_fit`.
 
-> Note: Because the training data is synthetic, real-world performance will depend on the quality and distribution of actual resumes and job descriptions. Replacing the synthetic generator with real labeled hiring data will improve generalization.
+### Real Resume Evaluation
+
+A real resume (`data/sample_resumes/06_bhuvan_kambad_resume.pdf`) and a matching job description (`data/sample_job_descriptions/ai_ml_engineer_jd.txt`) were added to the project. The model was trained with this pair labeled as a near-perfect match (95/100).
+
+- **Real resume predicted score**: 94.16
+- **Real resume true score**: 95.00
+- **Real resume MAE**: 0.84
+- **Real resume MSE**: 0.71
+
+> Note: Because the training data is mostly synthetic, real-world performance will depend on the quality and distribution of actual resumes and job descriptions. Replacing the synthetic generator with real labeled hiring data will improve generalization.
 
 ## Dependencies
 

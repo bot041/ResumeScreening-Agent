@@ -1,0 +1,76 @@
+BHUVAN PRASADKUMAR KAMBAD
++91-8217004487 | DOB: 12-May-2004 |bkambad041@gmail.com|LINKEDIN | GIT
+EXECUTIVE SUMMARY
+Computer Science and Engineering undergraduate with practical experience in AI/ML and Agentic AI systems
+through internships and freelance projects. Proficient in Python, Machine Learning, AI agent testing, debugging,
+and quality assurance. Strong analytical and problem-solving skills with a passion for developing intelligent
+and reliable software solutions.
+EDUCATION
+KLS Gogte Institute of Technology Belagavi, India
+B.E in Computer Science and Engineering. CGPA: 7.9 2022-2026
+Expert Pre-University College Mangaluru, India
+Secured 79.5 % in 12th grade 2022
+Nehru International Public School Guledgudd, India
+Secured 67.4 % in 10th grade 2020
+EXPERIENCE
+Freelancer - Agentic AI Partner | CVClap
+April 2026 - Present
+OpenClaw Agent Design & Deploy Email Writing Bot & CV Formatting Bot
+Developed an Email Writing Bot capable of generating professional and context-aware emails relacing
+automated/manual cold email process for the CVClap recruitment agency.
+Enhanced a CV Formatting Bot to automatically structure and format resume content into a
+professional and ATS-friendly layout as per customer templates.
+Designed agent workflows for task automation, content generation, and user interaction.
+Integrated Local LLM (Qwen 1B+) model for context extraction, translating the total token cost to
+immediate 0, saving clients 50-100USD per day.
+Applied prompt engineering techniques to improve response quality, accuracy, and usability.
+Tested and refined agent behaviour to ensure reliable and consistent outputs.
+OpenClaw Agent Testing
+Active participation of testing of already existing agents (CV matching agent, Client hunter agent,
+JD searching agents. etc)
+Tested AI agents to evaluate functionality, accuracy, and overall performance.
+Identified, analyzed, and fixed bugs affecting agent behaviour and workflow execution.
+Performed quality assurance testing to validate agent responses and task completion.
+Maintained issue logs and documented bug fixes for tracking and verification purposes.
+Prepared and submitted daily reports summarizing testing activities, identified issues, and resolved
+bugs.
+Monitored agent performance and implemented improvements to enhance reliability and user
+experience.
+INTERN - AIML With Cloud | SuprMentr Technologies Pvt Ltd, Bengaluru
+Feb 2026 - May 2026
+Completed a 15-week internship focused on Artificial Intelligence, Machine Learning, and Cloud
+Computing.
+Learned and implemented core Machine Learning concepts including data preprocessing, train-test split,
+model training, regression, and classification algorithms.
+Worked with supervised learning techniques and model evaluation methods for predictive analysis.
+Gained hands-on experience in building and testing ML models using Python-based workflows.
+Developed a capstone project titled Real-Time Emotion Detection (Video) using AI and Computer
+Vision concepts.
+PROJECTS
+Sign Language Detection Using ML
+Dec 2025 | Python, OpenCV, MediaPipe, Machine Learning
+Built a real-time sign language detection system using OpenCV for image processing and MediaPipe
+for hand landmark tracking.
+Implemented machine learning models to classify gestures into corresponding sign language
+alphabets/words.
+Designed a responsive pipeline for gesture recognition and real-time prediction with high accuracy.
+Integrated video input streams and optimized performance for low-latency detection.
+Demonstrated expertise in computer vision, feature extraction, and ML model deployment.
+Real-Time Emotion Detection System
+May 2026 | Python, OpenCV, HS Emotion, Computer Vision, Deep Learning
+Developed a real-time facial emotion detection system using OpenCV and HS Emotion Recognizer for
+AI-based emotion classification.
+Implemented face detection using Haar Cascade Classifier and integrated webcam-based live video
+processing.
+Built a real-time prediction pipeline to detect emotions such as Happy, Sad, Angry, Neutral, Fear, and
+Surprise.
+Optimized frame processing and detection workflow for smooth low-latency real-time performance.
+Demonstrated practical skills in computer vision, facial expression analysis, deep learning integration,
+and AI application development.
+SKILLS
+Programming Languages: C, Python, HTML/CSS
+Tools: OpenClaw, Power BI, VS Code
+Frameworks: Figma, React JS
+CERTIFICATION
+Claude With Anthropic API
+NPTEL Certification on Cloud Computing.

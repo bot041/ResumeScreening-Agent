@@ -1,0 +1,18 @@
+Job Title: AI/ML Engineer - Agentic AI
+
+We are looking for an AI/ML Engineer with hands-on experience in Agentic AI systems, large language models, and AI agent testing.
+
+Required Skills:
+- Python, Machine Learning, AI Agents, LLM, Prompt Engineering
+- AI agent testing, debugging, and quality assurance
+- Experience with local LLMs and model integration
+- Strong analytical and problem-solving skills
+
+Required Education:
+Bachelor's degree in Computer Science and Engineering or related field.
+
+Responsibilities:
+- Design and deploy AI agents for task automation and content generation
+- Test, debug, and refine agent behavior for reliable outputs
+- Apply prompt engineering techniques to improve model responses
+- Collaborate with teams to build intelligent software solutions
