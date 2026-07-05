@@ -131,8 +131,6 @@ A real resume (`data/sample_resumes/06_bhuvan_kambad_resume.pdf`) and a matching
 - **Real resume MAE**: 0.84
 - **Real resume MSE**: 0.71
 
-> Note: Because the training data is mostly synthetic, real-world performance will depend on the quality and distribution of actual resumes and job descriptions. Replacing the synthetic generator with real labeled hiring data will improve generalization.
-
 ## Dependencies
 
 Key libraries:
