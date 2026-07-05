@@ -1,0 +1,41 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Model artifacts (keep structure, ignore large files)
+models/*.pkl
+models/*.joblib
+models/*.json
+models/*.bin
+models/.locks/
+models/CACHEDIR.TAG
+models/models--*/
+!models/.gitkeep
+
+# Data outputs
+data/output/
+*.csv
+
+# Jupyter Notebook checkpoints
+notebooks/.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

@@ -1,0 +1,20 @@
+Carol Williams
+Data Scientist
+
+Skills:
+Python, R, SQL, Machine Learning, Deep Learning, NLP, TensorFlow, PyTorch, scikit-learn, pandas, numpy, Statistics, Communication, Analytical Thinking
+
+Experience:
+Data Scientist at DataWorks - 4 years of experience.
+Built predictive models for customer churn and recommendation systems.
+Developed NLP pipelines for text classification using BERT.
+Created data visualizations and presented insights to stakeholders.
+
+Education:
+Master in Data Science
+
+Projects:
+Developed a sentiment analysis model for social media data.
+
+Certifications:
+Google Cloud Professional Data Engineer

@@ -1,0 +1,19 @@
+Job Title: Data Scientist
+
+We are looking for a Data Scientist with 3+ years of experience in machine learning and data analysis.
+
+Required Skills:
+- Python, R, SQL
+- Machine Learning, Deep Learning, NLP
+- TensorFlow, PyTorch, scikit-learn, pandas, numpy
+- Statistics and data visualization
+- Strong communication and analytical skills
+
+Required Education:
+Master's degree in Data Science, Computer Science, or related field.
+
+Responsibilities:
+- Build predictive models and ML pipelines
+- Analyze large datasets to extract business insights
+- Develop NLP solutions for text classification and sentiment analysis
+- Present findings to stakeholders

@@ -1,0 +1,20 @@
+Alex Johnson
+Senior Software Engineer
+
+Skills:
+Python, Django, React, JavaScript, SQL, Docker, Kubernetes, REST API, Microservices, Git, CI/CD, Problem Solving, Teamwork
+
+Experience:
+Senior Software Engineer at TechCorp - 7 years of experience.
+Built scalable web applications using Python, Django, and React.
+Designed REST APIs and deployed microservices on Kubernetes.
+Implemented CI/CD pipelines with Jenkins and Docker.
+
+Education:
+Bachelor in Computer Science
+
+Projects:
+Developed a high-traffic e-commerce platform serving 1M+ users.
+
+Certifications:
+AWS Certified Developer

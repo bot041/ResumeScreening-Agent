@@ -1,0 +1,20 @@
+Eve Davis
+Full Stack Developer
+
+Skills:
+Python, JavaScript, React, Node.js, SQL, MongoDB, Docker, Git, Problem Solving
+
+Experience:
+Full Stack Developer at CloudSys - 4 years of experience.
+Built full-stack applications with React and Node.js.
+Worked with Python for backend scripting and data processing.
+Deployed applications using Docker containers.
+
+Education:
+Bachelor in Computer Science
+
+Projects:
+Developed a task management SaaS application.
+
+Certifications:
+AWS Certified Cloud Practitioner

@@ -1,0 +1,19 @@
+Bob Smith
+Software Developer
+
+Skills:
+Python, Flask, HTML, CSS, JavaScript, MySQL, Git, Linux
+
+Experience:
+Software Developer at WebSolutions - 3 years of experience.
+Developed web applications using Flask and JavaScript.
+Worked with MySQL databases and basic Docker containers.
+
+Education:
+Bachelor in Information Technology
+
+Projects:
+Built a personal blog platform and portfolio website.
+
+Certifications:
+None
