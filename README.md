@@ -149,6 +149,11 @@ git push -u origin main
 
 Replace `YOUR_USERNAME` with your GitHub username.
 
+## Author
+
+- **Name:** Bhuvan Kambad
+- **Email:** bkambad041@gmail.com
+
 ## Out of Scope
 
 As per requirements, the following are intentionally excluded:

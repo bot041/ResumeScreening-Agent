@@ -9,12 +9,12 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 setup(
     name="resume-screening-agent",
     version="1.0.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Bhuvan Kambad",
+    author_email="bkambad041@gmail.com",
     description="An ML-powered agent for ranking resumes against job descriptions",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/resume-screening-agent",
+    url="https://github.com/bot041/ResumeScreening-Agent",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     classifiers=[
