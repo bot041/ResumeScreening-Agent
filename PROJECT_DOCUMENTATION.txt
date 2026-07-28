@@ -1,0 +1,602 @@
+================================================================================
+        RESUME SCREENING AGENT — COMPLETE PROJECT DOCUMENTATION
+================================================================================
+Author : Bhuvan Kambad (bkambad041@gmail.com)
+Version: 1.0.0
+Date   : 2026-07-27
+================================================================================
+
+
+TABLE OF CONTENTS
+=================
+1.  Project Overview
+2.  How the Agent Works (Architecture & Pipeline)
+3.  Features Extracted from Resumes
+4.  Supported File Types (Input & Output)
+5.  Expected Output
+6.  Tools & Technologies Used (with Rationale)
+7.  Project Structure
+8.  Setup & Usage Guide
+9.  Design Patterns & Architectural Decisions
+10. Model Performance
+11. Limitations & Future Work
+
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+The Resume Screening Agent is an AI-powered, automated resume screening system
+that ranks candidates against a given job description (JD). Instead of relying
+solely on simple keyword matching, the system combines:
+
+  - Natural Language Processing (NLP) semantic similarity (Sentence-BERT)
+  - TF-IDF statistical text similarity
+  - Hand-engineered features (skills, experience, education, resume structure)
+
+These 17 features are fed into an XGBoost regression model that predicts a
+relevance score (0-100) for each resume. Resumes are then ranked from most
+to least relevant.
+
+The core philosophy is INTERPRETABILITY — every feature that contributes to a
+candidate's score can be inspected, making the system auditable by recruiters
+and hiring managers. Unlike black-box deep learning approaches, the reasons
+behind every ranking are transparent.
+
+
+================================================================================
+2. HOW THE AGENT WORKS (ARCHITECTURE & PIPELINE)
+================================================================================
+
+The system operates in three distinct phases:
+
+┌─────────────────────────────────────────────────────────────────┐
+│ PHASE 1: TRAINING                                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Synthetic Data Generation  ──►  Feature Extraction  ──►  Train │
+│  (2000 resume-JD pairs         (17 features per        XGBoost  │
+│   with heuristic labels)        resume-JD pair)        Model    │
+│                                                                  │
+│  Output: ranking_model.json, scaler.joblib, feature_names.json  │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ PHASE 2: INFERENCE (Ranking)                                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Resumes (PDF/DOCX/TXT)  ──►  Parse to text  ──►  Extract 17   │
+│  Job Description (TXT)    ──►  Parse to text  ──►   features    │
+│                                                                  │
+│  Feature vectors  ──►  StandardScaler  ──►  XGBoost  ──►  Score │
+│                                                       (0-100)   │
+│                                                                  │
+│  Scores  ──►  Sort descending  ──►  Ranked CSV output            │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ PHASE 3: TESTING                                                │
+├─────────────────────────────────────────────────────────────────┤
+│  7 pytest unit tests + 1 integration test validate each module  │
+└─────────────────────────────────────────────────────────────────┘
+
+
+DETAILED STEP-BY-STEP FLOW:
+---------------------------
+
+Step 1 — Resume Parsing (parse_resume.py):
+    The system auto-detects file format by extension and uses the appropriate
+    parser:
+      • .pdf  → pdfplumber (iterates over pages, extracts clean text)
+      • .docx → python-docx (extracts paragraph text)
+      • .txt  → Python built-in open() with UTF-8
+
+    All text is cleaned (normalized whitespace, non-ASCII stripped).
+
+Step 2 — Job Description Parsing:
+    The JD is read as plain text from a .txt file.
+
+Step 3 — Feature Extraction (extract_features.py):
+    For each resume-JD pair, 17 numerical features are computed:
+      • Semantic similarity  — Sentence-BERT cosine similarity
+      • TF-IDF similarity     — TF-IDF cosine similarity
+      • Skill-based features  — matched_skills, missing_skills,
+                                 skill_match_ratio, extra_skills
+      • Experience features   — resume_years, required_years, experience_fit
+      • Education features    — resume_level, required_level, education_fit
+      • Section presence      — has_experience, has_education, has_skills,
+                                 has_projects, has_certifications
+
+Step 4 — Similarity Scoring (similarity.py):
+    The SimilarityScorer class manages:
+      • Sentence-BERT model (all-MiniLM-L6-v2) for semantic similarity
+      • TF-IDF vectorizer for statistical keyword similarity
+    Batch encoding is used: the JD is encoded once, all resumes are encoded
+    together, then pairwise cosine similarities are computed efficiently.
+
+Step 5 — Ranking (rank_candidates.py):
+    The ResumeRanker class:
+      1. Loads the trained XGBoost model, StandardScaler, and feature names
+      2. Computes all 17 features for each resume-JD pair
+      3. Scales features using the pre-fitted StandardScaler
+      4. Predicts scores via XGBoost (clipped to 0-100)
+      5. Returns a DataFrame sorted by score descending
+
+Step 6 — Output:
+    Results are saved as a CSV file with all feature values, the predicted
+    score, and the rank for each resume. The top-ranked resume has rank=1.
+
+
+================================================================================
+3. FEATURES EXTRACTED FROM RESUMES
+================================================================================
+
+The system extracts 17 features per resume-JD pair. Here is each feature
+explained:
+
+────────────────────────────────────────────────────────────────────
+FEATURE                    TYPE      DESCRIPTION
+────────────────────────────────────────────────────────────────────
+semantic_similarity        Float     Sentence-BERT cosine similarity
+                                     between resume and JD (0-1).
+                                     Captures overall meaning overlap
+                                     beyond exact keywords.
+
+tfidf_similarity           Float     TF-IDF cosine similarity (0-1).
+                                     Captures keyword/term overlap
+                                     weighted by rarity.
+
+matched_skills             Integer   Count of skills from the JD that
+                                     appear in the resume.
+
+missing_skills             Integer   Count of JD-required skills NOT
+                                     found in the resume.
+
+skill_match_ratio          Float     matched_skills / total JD skills.
+                                     A 0-1 ratio; 1.0 = perfect match.
+
+extra_skills               Integer   Count of skills in the resume
+                                     that are NOT required by the JD.
+                                     Indicates additional capabilities.
+
+resume_experience_years    Integer   Total years of experience extracted
+                                     from the resume (max 40).
+
+required_experience_years  Integer   Minimum years required by the JD.
+
+experience_fit             Float     If resume_years >= required_years
+                                     → 1.0, otherwise ratio score (0-1).
+
+resume_education_level     Integer   Highest education detected:
+                                     1=High School, 2=Associate,
+                                     3=Bachelor, 4=Master, 5=PhD.
+
+required_education_level   Integer   Education level required by the JD
+                                     (same 1-5 scale).
+
+education_fit              Float     If resume_level >= required_level
+                                     → 1.0, otherwise ratio score (0-1).
+
+has_experience             0/1       Boolean: does the resume contain an
+                                     "Experience" or "Work History" section?
+
+has_education              0/1       Boolean: does the resume contain an
+                                     "Education" section?
+
+has_skills                 0/1       Boolean: does the resume contain a
+                                     "Skills" section?
+
+has_projects               0/1       Boolean: does the resume contain a
+                                     "Projects" section?
+
+has_certifications         0/1       Boolean: does the resume contain a
+                                     "Certifications" section?
+────────────────────────────────────────────────────────────────────
+
+SKILL EXTRACTION:
+-----------------
+The system maintains a predefined set of ~80 technical skills:
+  Python, Java, JavaScript, TypeScript, C, C++, C#, Go, Rust, Ruby, PHP,
+  Swift, Kotlin, Scala, R, MATLAB, SQL, NoSQL, MongoDB, PostgreSQL, MySQL,
+  React, Angular, Vue, Node.js, Django, Flask, Spring, Express, .NET,
+  Docker, Kubernetes, AWS, Azure, GCP, Terraform, Ansible, Jenkins,
+  Git, Linux, Bash, REST, GraphQL, HTML, CSS, Selenium, Pandas, NumPy,
+  Scikit-learn, TensorFlow, PyTorch, Keras, NLP, Computer Vision,
+  Deep Learning, Machine Learning, Data Science, Spark, Hadoop, Kafka,
+  Redis, RabbitMQ, Elasticsearch, Tableau, Power BI, Excel, Agile,
+  Scrum, JIRA, CI/CD, Microservices, API, OOP, etc.
+
+And ~15 soft skills:
+  Communication, Leadership, Teamwork, Problem Solving, Critical Thinking,
+  Time Management, Adaptability, Creativity, Collaboration, etc.
+
+Skills are extracted via regex with word-boundary matching against the
+resume text, ensuring "Java" doesn't match "JavaScript".
+
+
+================================================================================
+4. SUPPORTED FILE TYPES
+================================================================================
+
+INPUT FILES:
+────────────────────────────────────────────────────────────────────
+FILE TYPE    EXTENSION    PARSER           NOTES
+────────────────────────────────────────────────────────────────────
+Resume       .pdf         pdfplumber       Multi-page, preserves layout
+Resume       .docx        python-docx      Microsoft Word format
+Resume       .txt         Python open()    Plain text, UTF-8 encoding
+Job Desc.    .txt         Python open()    Plain text only
+────────────────────────────────────────────────────────────────────
+
+MODEL ARTIFACTS (pre-trained files):
+────────────────────────────────────────────────────────────────────
+FILE                    FORMAT     PURPOSE
+────────────────────────────────────────────────────────────────────
+ranking_model.json      JSON       Trained XGBoost regressor
+scaler.joblib           Pickle     Fitted StandardScaler
+feature_names.json      JSON       Ordered list of 17 feature names
+────────────────────────────────────────────────────────────────────
+
+OUTPUT FILES:
+────────────────────────────────────────────────────────────────────
+FILE                    FORMAT     PURPOSE
+────────────────────────────────────────────────────────────────────
+ranked_candidates.csv   CSV        Ranked results with all features
+                                   and scores
+────────────────────────────────────────────────────────────────────
+
+
+================================================================================
+5. EXPECTED OUTPUT
+================================================================================
+
+The system produces a CSV file (default: ranked_candidates.csv) with these
+columns:
+
+  rank, filename, score, semantic_similarity, tfidf_similarity,
+  matched_skills, missing_skills, skill_match_ratio, extra_skills,
+  resume_experience_years, required_experience_years, experience_fit,
+  resume_education_level, required_education_level, education_fit,
+  has_experience, has_education, has_skills, has_projects,
+  has_certifications
+
+The file is sorted by score in descending order, so:
+  • rank 1 = the best-matching candidate
+  • rank N = the weakest match
+
+EXAMPLE OUTPUT (actual system output):
+────────────────────────────────────────────────────────────────────
+rank  filename                           score
+────────────────────────────────────────────────────────────────────
+  1   01_alex_strong_match_se.docx       64.41
+  2   01_alex_strong_match_se.pdf        64.41
+  3   01_alex_strong_match_se.txt        64.41
+  4   05_eve_fullstack_moderate.pdf      62.28
+  5   05_eve_fullstack_moderate.txt      62.28
+  6   05_eve_fullstack_moderate.docx     62.28
+  7   02_bob_partial_match_se.txt        56.05
+  8   02_bob_partial_match_se.docx       56.05
+  9   02_bob_partial_match_se.pdf        56.05
+ 10   04_dave_weak_match.txt             38.11
+ 11   04_dave_weak_match.pdf             38.11
+ 12   04_dave_weak_match.docx            38.11
+ 13   03_carol_ml_strong_match_ds.txt    24.66
+ 14   03_carol_ml_strong_match_ds.pdf    24.66
+ 15   03_carol_ml_strong_match_ds.docx   24.66
+ 16   06_bhuvan_kambad_resume.pdf        23.09
+────────────────────────────────────────────────────────────────────
+
+NOTE: The scores above are against the "Software Engineer" JD.
+Carol (a data scientist) and Bhuvan (an AI/ML engineer) score lower
+because their profiles match the Data Science / AI-ML JDs, not the
+Software Engineer JD. When ranked against the AI/ML Engineer JD,
+Bhuvan's resume scores ~94/100 against a true label of 95/100.
+
+The console output shows a clean summary table:
+======================================================================
+  Rank  Filename                             Score
+======================================================================
+  1     01_alex_strong_match_se.docx         64.41
+  2     01_alex_strong_match_se.pdf          64.41
+  ...
+======================================================================
+
+
+================================================================================
+6. TOOLS & TECHNOLOGIES USED (WITH RATIONALE)
+================================================================================
+
+┌───────────────────────┬─────────────┬──────────────────────────────────────┐
+│ TOOL / LIBRARY        │ VERSION     │ WHY IT WAS CHOSEN                    │
+├───────────────────────┼─────────────┼──────────────────────────────────────┤
+│ Python                │ 3.8+        │ The entire data science and ML       │
+│                       │             │ ecosystem lives in Python. Rich      │
+│                       │             │ libraries for NLP, ML, and file      │
+│                       │             │ parsing.                             │
+├───────────────────────┼─────────────┼──────────────────────────────────────┤
+│ pdfplumber            │ >=0.10.0    │ Chosen over PyMuPDF and PyPDF2       │
+│                       │             │ because it preserves text layout,    │
+│                       │             │ handles multi-column resumes better, │
+│                       │             │ and has a cleaner API. It extracts   │
+│                       │             │ text page-by-page with accurate      │
+│                       │             │ positioning.                         │
+├───────────────────────┼─────────────┼──────────────────────────────────────┤
+│ python-docx           │ >=0.8.11    │ The de facto standard for reading     │
+│                       │             │ .docx files in Python. Extracts text │
+│                       │             │ from paragraphs, tables, and headers │
+│                       │             │ cleanly.                             │
+├───────────────────────┼─────────────┼──────────────────────────────────────┤
+│ sentence-transformers │ >=2.2.0     │ Provides state-of-the-art sentence   │
+│                       │             │ embeddings. The all-MiniLM-L6-v2     │
+│                       │             │ model was chosen because it:         │
+│                       │             │  • Is small (~80MB) and fast         │
+│                       │             │  • Produces 384-dim embeddings       │
+│                       │             │  • Ranks near the top of the MTEB    │
+│                       │             │    (Massive Text Embedding Benchmark)│
+│                       │             │  • Works well for short-to-medium    │
+│                       │             │    texts like resumes and JDs        │
+│                       │             │  • Runs locally — no API calls       │
+├───────────────────────┼─────────────┼──────────────────────────────────────┤
+│ scikit-learn          │ >=1.3.0     │ Provides:                           │
+│                       │             │  • TfidfVectorizer — converts text   │
+│                       │             │    to weighted term-frequency matrix │
+│                       │             │  • StandardScaler — normalizes       │
+│                       │             │    features to zero mean / unit var  │
+│                       │             │  • train_test_split — for hold-out   │
+│                       │             │    validation                        │
+│                       │             │  • mean_absolute_error, mean_squared │
+│                       │             │    _error — for evaluation           │
+├───────────────────────┼─────────────┼──────────────────────────────────────┤
+│ xgboost               │ >=2.0.0     │ Chosen over Random Forest, Linear    │
+│                       │             │ Regression, and Neural Networks      │
+│                       │             │ because:                             │
+│                       │             │  • Handles tabular features well     │
+│                       │             │  • Built-in regularization prevents  │
+│                       │             │    overfitting on the small dataset  │
+│                       │             │  • Provides feature importance       │
+│                       │             │    rankings — critical for auditing  │
+│                       │             │  • Fast training and inference       │
+│                       │             │  • Saves as JSON (no pickle security │
+│                       │             │    concerns)                         │
+├───────────────────────┼─────────────┼──────────────────────────────────────┤
+│ numpy                 │ >=1.24.0    │ Foundation for all numerical arrays. │
+│                       │             │ Underlies every other ML library.    │
+├───────────────────────┼─────────────┼──────────────────────────────────────┤
+│ pandas                │ >=2.0.0     │ DataFrames for structured storage    │
+│                       │             │ and CSV I/O. The rank_candidates     │
+│                       │             │ module returns pandas DataFrames.    │
+├───────────────────────┼─────────────┼──────────────────────────────────────┤
+│ joblib                │ >=1.3.0     │ Fast serialization of the            │
+│                       │             │ StandardScaler object. More          │
+│                       │             │ efficient than pickle for numpy      │
+│                       │             │ arrays.                              │
+├───────────────────────┼─────────────┼──────────────────────────────────────┤
+│ nltk                  │ >=3.8.0     │ Installed as a dependency; provides  │
+│                       │             │ stopword lists and tokenization for  │
+│                       │             │ future enhancements.                 │
+├───────────────────────┼─────────────┼──────────────────────────────────────┤
+│ PyYAML                │ >=6.0       │ Installed for potential config-file  │
+│                       │             │ support (future enhancement).        │
+├───────────────────────┼─────────────┼──────────────────────────────────────┤
+│ fpdf2                 │ >=2.7.0     │ Generates sample PDF resumes from    │
+│                       │             │ .txt templates for testing the       │
+│                       │             │ parser. Not used in production.      │
+├───────────────────────┼─────────────┼──────────────────────────────────────┤
+│ pytest                │ >=7.4.0     │ Testing framework for 7 unit tests   │
+│                       │             │ covering parsing, feature extraction,│
+│                       │             │ and ranking.                         │
+└───────────────────────┴─────────────┴──────────────────────────────────────┘
+
+EMBEDDING MODEL:
+────────────────
+  Model: sentence-transformers/all-MiniLM-L6-v2
+  Size : ~80 MB
+  Dims : 384-dimensional embeddings
+  Why  : Best trade-off between speed, accuracy, and size for short texts.
+         Downloaded once and cached locally in the models/ directory.
+         Works offline after initial download.
+
+
+================================================================================
+7. PROJECT STRUCTURE
+================================================================================
+
+Resume Screening Agent/
+│
+├── README.md                  # Full project readme
+├── requirements.txt           # Python dependencies
+├── setup.py                   # Package metadata (pip install -e .)
+├── tradeoffs.md               # Design decision documentation
+├── ranked_candidates.csv      # Sample output file
+├── .gitignore                 # Git ignore rules
+│
+├── src/                       # Source code
+│   ├── __init__.py            # Package init, version 1.0.0
+│   ├── parse_resume.py        # PDF/DOCX/TXT text extraction
+│   ├── extract_features.py    # 17-feature engineering
+│   ├── similarity.py          # Sentence-BERT + TF-IDF scoring
+│   ├── train_model.py         # Synthetic data + XGBoost training
+│   ├── rank_candidates.py     # Inference engine + CLI
+│   └── utils.py               # Constants, regex extractors
+│
+├── tests/                     # Test suite
+│   ├── __init__.py
+│   └── test_pipeline.py       # 7 unit tests (pytest)
+│
+├── data/                      # Sample data
+│   ├── generate_sample_files.py   # Converts TXT → PDF/DOCX
+│   ├── sample_resumes/            # 6 candidates × 3 formats
+│   └── sample_job_descriptions/   # 3 JDs (SE, DS, AI/ML)
+│
+├── models/                    # Trained artifacts
+│   ├── ranking_model.json     # XGBoost model
+│   ├── scaler.joblib          # StandardScaler
+│   ├── feature_names.json     # Feature name list
+│   └── models--sentence-transformers--all-MiniLM-L6-v2/  # Cached model
+│
+└── notebooks/
+    └── 01_model_development.ipynb  # Demo notebook
+
+
+================================================================================
+8. SETUP & USAGE GUIDE
+================================================================================
+
+SETUP:
+------
+  cd "C:\Users\BHUVAN\Desktop\Projects\Resume Screening Agent"
+
+  # Create virtual environment
+  python -m venv venv
+  venv\Scripts\activate        # Windows
+  # source venv/bin/activate   # macOS / Linux
+
+  # Install dependencies
+  pip install -r requirements.txt
+
+  # Install the package in development mode
+  pip install -e .
+
+TRAINING THE MODEL:
+-------------------
+  python src/train_model.py
+
+  This generates 2000 synthetic resume-JD pairs, extracts features,
+  trains the XGBoost model, and saves artifacts to the models/ directory.
+
+RANKING CANDIDATES (CLI):
+--------------------------
+  python src/rank_candidates.py \
+      --jd data/sample_job_descriptions/software_engineer_jd.txt \
+      --resumes data/sample_resumes \
+      --models models \
+      --output ranked_candidates.csv
+
+RANKING CANDIDATES (Python API):
+---------------------------------
+  from src.rank_candidates import ResumeRanker
+
+  ranker = ResumeRanker(models_dir="models")
+
+  with open("jd.txt") as f:
+      jd_text = f.read()
+
+  results = ranker.rank_from_folder(jd_text, "data/sample_resumes")
+  print(results[["rank", "filename", "score"]])
+
+RUNNING TESTS:
+--------------
+  pytest tests/
+
+
+================================================================================
+9. DESIGN PATTERNS & ARCHITECTURAL DECISIONS
+================================================================================
+
+WHY ENGINEERED FEATURES + XGBOOST INSTEAD OF END-TO-END DEEP LEARNING?
+────────────────────────────────────────────────────────────────────────
+  1. Interpretability — every feature can be inspected. A recruiter can
+     see exactly why a candidate scored 64 vs 38.
+  2. Data efficiency — 2000 synthetic samples are enough; deep learning
+     would require millions of labeled resume-JD pairs.
+  3. Deployment simplicity — a small JSON model + scaler, no GPU needed.
+  4. Audit trail — each feature value is written to the output CSV.
+
+WHY SENTENCE-BERT + TF-IDF (DUAL SIMILARITY)?
+───────────────────────────────────────────────
+  • Sentence-BERT captures semantic meaning (e.g., "built ML pipelines"
+    and "developed machine learning systems" match even with no shared
+    keywords).
+  • TF-IDF captures exact keyword overlap (e.g., "Docker" and "Kubernetes"
+    are exact tokens that should match precisely).
+  • Together they complement each other — semantics + keywords.
+
+WHY SYNTHETIC TRAINING DATA?
+──────────────────────────────
+  • No public dataset of labeled resume-JD pairs with relevance scores.
+  • Synthetic data provides controlled, noise-injected training samples.
+  • The heuristic scoring function (50% skills, 30% experience, 20%
+    education) encodes domain knowledge about what matters in hiring.
+  • Real labeled examples (like Bhuvan's resume) can be mixed in to
+    calibrate the model.
+
+WHY PDFPLUMBER OVER PYMUPDF OR PYPDF2?
+───────────────────────────────────────
+  • PyMuPDF (fitz) — fastest but has AGPL licensing concerns.
+  • PyPDF2 — free but struggles with complex layouts and multi-column text.
+  • pdfplumber — accurate layout preservation, per-page iteration, clean
+    API, and MIT license.
+
+DESIGN PATTERNS USED:
+──────────────────────
+  • Pipeline Pattern      — Sequential stages: parse → extract → score → rank
+  • Strategy Pattern      — Format-specific parsers dispatched by extension
+  • Object-Oriented Core  — SimilarityScorer and ResumeRanker encapsulate
+                             stateful model objects
+  • Functional Utilities  — Pure functions for feature extraction (testable)
+  • Batch Processing      — Single JD encoding, multi-resume encoding
+  • CLI + API Dual Mode   — Both command-line and Python library interfaces
+
+
+================================================================================
+10. MODEL PERFORMANCE
+================================================================================
+
+On a held-out test set (20% of 2000 synthetic samples):
+
+  • Mean Absolute Error (MAE) : 2.50 points
+  • Mean Squared Error (MSE)  : 11.34
+
+On the real-world resume example:
+  • True label   : 95.00 (AI/ML Engineer JD)
+  • Predicted    : 94.16
+  • Error        : 0.84 points
+
+TOP 10 FEATURE IMPORTANCES (from XGBoost):
+─────────────────────────────────────────
+  1. semantic_similarity        (most important)
+  2. tfidf_similarity
+  3. skill_match_ratio
+  4. matched_skills
+  5. missing_skills
+  6. experience_fit
+  7. resume_experience_years
+  8. education_fit
+  9. extra_skills
+  10. has_projects
+
+This confirms that semantic similarity and skill matching are the two
+strongest signals — which aligns with how human recruiters evaluate resumes.
+
+
+================================================================================
+11. LIMITATIONS & FUTURE WORK
+================================================================================
+
+LIMITATIONS:
+  • Skill extraction is regex-based — it won't detect skills phrased
+    differently from the predefined list (e.g., "built neural nets" vs
+    "Deep Learning").
+  • No OCR support — scanned/image-based PDFs cannot be parsed.
+  • No structured section parsing — the system detects section presence
+    but doesn't extract the content of each section separately.
+  • Single-JD ranking — currently ranks against one JD at a time.
+  • English-only — no multilingual support.
+  • Synthetic data bias — the model inherits the biases of the heuristic
+    scoring function used to label training data.
+
+FUTURE ENHANCEMENTS:
+  • Named Entity Recognition (NER) for company names, universities, job titles
+  • OCR support for scanned PDFs (Tesseract integration)
+  • Multi-JD matching — rank one resume against multiple JDs simultaneously
+  • Web UI / dashboard for interactive ranking
+  • API server (FastAPI) for integration with ATS/HR systems
+  • Support for additional formats: .rtf, .odt, .html
+  • Fine-tuned domain-specific embedding model on resume data
+  • Active learning — incorporate recruiter feedback to improve the model
+  • Experience timeline parsing — extract individual job durations
+
+
+================================================================================
+                          END OF DOCUMENT
+================================================================================
